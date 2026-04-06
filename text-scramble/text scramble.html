@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Text Scramble</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --screen-width: 375px;
+        --panel-width: 343px;
+        --accent: #06d1fe;
+        --paper: #ffffff;
+        --ink: #171717;
+        --muted: #757575;
+        --rule: #e8e5dd;
+        --shadow: 0 30px 70px rgba(34, 27, 16, 0.18);
+        font-family: "Aktiv Grotesk", "Inter", "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #1a1a1a;
+        color: var(--ink);
+        overflow-x: hidden;
+      }
+
+      .phone {
+        width: min(calc(100vw - 24px), var(--screen-width));
+        max-width: 100%;
+        height: 812px;
+        background: var(--paper);
+        border-radius: 30px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        border: 1px solid rgba(23, 23, 23, 0.06);
+      }
+
+      .screen {
+        width: 100%;
+        height: 100%;
+        padding: 32px 16px;
+        background: #ffffff;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .screen::-webkit-scrollbar {
+        display: none;
+      }
+
+      .header {
+        width: var(--panel-width);
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .eyebrow {
+        margin: 0;
+        font-family: "Aktiv Grotesk Cd", "Arial Narrow", sans-serif;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+
+      .subcopy {
+        margin: 2px 0 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .badge {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 28px;
+        padding: 0 12px;
+        border: 1px solid var(--accent);
+        background: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .badge-dot {
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+      }
+
+      .asset-list {
+        width: var(--panel-width);
+        margin: 28px 0 0;
+      }
+
+      .asset-row {
+        position: relative;
+        display: flex;
+        align-items: stretch;
+        width: 100%;
+        min-height: 101px;
+        background: #fff;
+      }
+
+      .asset-row::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 0.5px;
+        background: #d9d9d9;
+      }
+
+      .asset-copy {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding: 0 16px 0 8px;
+        display: flex;
+        align-items: center;
+      }
+
+      .asset-copy-wrap {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .asset-text {
+        position: relative;
+        min-width: 0;
+        max-width: 168px;
+        min-height: 18px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .asset-title {
+        margin: 0;
+        font-family: "Neue Montreal", "Neue Haas Grotesk Display Pro", "Inter", sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 15px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        word-break: normal;
+        overflow: hidden;
+        transition: color 72ms linear;
+      }
+
+      .asset-title-measure {
+        display: block;
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: 100%;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .asset-share {
+        margin: 4px 0 0;
+        font-family: "Neue Montreal", "Neue Haas Grotesk Display Pro", "Inter", sans-serif;
+        font-size: 11px;
+        font-weight: 500;
+        line-height: 1;
+        color: var(--muted);
+        letter-spacing: -0.02em;
+      }
+
+      .hold-button {
+        flex: 0 0 auto;
+        border: 0;
+        padding: 0;
+        background: transparent;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        color: var(--muted);
+        cursor: pointer;
+        user-select: none;
+        touch-action: none;
+      }
+
+      .hold-button:active .hold-button-chip,
+      .hold-button.is-pressed .hold-button-chip {
+        transform: scale(0.97);
+      }
+
+      .hold-button-chip {
+        min-width: 34px;
+        height: 22px;
+        padding: 0 8px;
+        border-radius: 5px;
+        display: grid;
+        place-items: center;
+        background: var(--accent);
+        transition: transform 140ms ease;
+      }
+
+      .hold-button-label {
+        font-family: "Neue Montreal", "Neue Haas Grotesk Display Pro", "Inter", sans-serif;
+        font-size: 11px;
+        font-weight: 500;
+        line-height: 1;
+        letter-spacing: -0.02em;
+      }
+
+      .asset-image {
+        position: relative;
+        flex: 0 0 78px;
+        width: 78px;
+        min-height: 101px;
+        overflow: hidden;
+      }
+
+      .asset-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scale(1.42);
+        filter: blur(12px) saturate(0.82);
+      }
+
+      .asset-image::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(174deg, rgba(102, 102, 102, 0) 55%, rgba(0, 0, 0, 0.72) 100%);
+      }
+
+      .asset-image::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(128, 128, 128, 0.2);
+      }
+
+      .lock {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        z-index: 1;
+      }
+
+      .hint-live {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+      }
+
+      @media (max-width: 420px) {
+        .phone {
+          width: min(calc(100vw - 24px), var(--screen-width));
+        }
+
+        .screen {
+          height: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="phone">
+      <div class="screen">
+        <header class="header">
+          <div>
+            <p class="eyebrow">40 Assets in ETF</p>
+            <p class="subcopy">Locked until launch.</p>
+          </div>
+
+          <div class="badge">
+            <span class="badge-dot"></span>
+            <span>Comin soon</span>
+          </div>
+        </header>
+
+        <section class="asset-list" aria-label="ETF asset list">
+          <article class="asset-row" data-hint="jersey grail">
+            <div class="asset-copy">
+              <div class="asset-copy-wrap">
+                <div class="asset-text">
+                  <span class="asset-title asset-title-measure" aria-hidden="true"></span>
+                  <p class="asset-title" aria-hidden="true"></p>
+                  <p class="asset-share">??% of ETF</p>
+                </div>
+
+                <button class="hold-button" type="button" aria-label="Press and hold to show asset hint">
+                  <span class="hold-button-chip">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="white">
+                      <path d="M3 3l18 18" stroke-width="1.8" stroke-linecap="round" />
+                      <path d="M10.58 10.58A2 2 0 0012 14a2 2 0 001.42-.58" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M9.88 5.09A9.77 9.77 0 0112 4.8c4.2 0 7.8 2.6 9.2 6.2a10.75 10.75 0 01-2.33 3.47" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M6.1 6.1A10.9 10.9 0 002.8 11c1.4 3.6 5 6.2 9.2 6.2 1.48 0 2.9-.32 4.18-.9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                  <span class="hold-button-label">show hint</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="asset-image">
+              <img src="../Rally app v2/public/image-globe/Image Assets/Cavs.jpg" alt="" />
+              <div class="lock">
+                <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24" fill="none" stroke="rgba(255,255,255,0.9)">
+                  <rect x="5.25" y="10.25" width="13.5" height="9.5" rx="2.4" stroke-width="1.7"></rect>
+                  <path d="M8.5 10V7.9A3.5 3.5 0 0112 4.4a3.5 3.5 0 013.5 3.5V10" stroke-width="1.7" stroke-linecap="round"></path>
+                </svg>
+              </div>
+            </div>
+
+            <span class="hint-live" aria-live="polite"></span>
+          </article>
+
+          <article class="asset-row" data-hint="speed icon">
+            <div class="asset-copy">
+              <div class="asset-copy-wrap">
+                <div class="asset-text">
+                  <span class="asset-title asset-title-measure" aria-hidden="true"></span>
+                  <p class="asset-title" aria-hidden="true"></p>
+                  <p class="asset-share">??% of ETF</p>
+                </div>
+
+                <button class="hold-button" type="button" aria-label="Press and hold to show asset hint">
+                  <span class="hold-button-chip">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="white">
+                      <path d="M3 3l18 18" stroke-width="1.8" stroke-linecap="round" />
+                      <path d="M10.58 10.58A2 2 0 0012 14a2 2 0 001.42-.58" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M9.88 5.09A9.77 9.77 0 0112 4.8c4.2 0 7.8 2.6 9.2 6.2a10.75 10.75 0 01-2.33 3.47" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M6.1 6.1A10.9 10.9 0 002.8 11c1.4 3.6 5 6.2 9.2 6.2 1.48 0 2.9-.32 4.18-.9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                  <span class="hold-button-label">show hint</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="asset-image">
+              <img src="../Rally app v2/public/image-globe/Image Assets/Lamborghini Countach Professional Photo Shoot 1.jpg" alt="" />
+              <div class="lock">
+                <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24" fill="none" stroke="rgba(255,255,255,0.9)">
+                  <rect x="5.25" y="10.25" width="13.5" height="9.5" rx="2.4" stroke-width="1.7"></rect>
+                  <path d="M8.5 10V7.9A3.5 3.5 0 0112 4.4a3.5 3.5 0 013.5 3.5V10" stroke-width="1.7" stroke-linecap="round"></path>
+                </svg>
+              </div>
+            </div>
+
+            <span class="hint-live" aria-live="polite"></span>
+          </article>
+
+          <article class="asset-row" data-hint="iconic pair">
+            <div class="asset-copy">
+              <div class="asset-copy-wrap">
+                <div class="asset-text">
+                  <span class="asset-title asset-title-measure" aria-hidden="true"></span>
+                  <p class="asset-title" aria-hidden="true"></p>
+                  <p class="asset-share">??% of ETF</p>
+                </div>
+
+                <button class="hold-button" type="button" aria-label="Press and hold to show asset hint">
+                  <span class="hold-button-chip">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="white">
+                      <path d="M3 3l18 18" stroke-width="1.8" stroke-linecap="round" />
+                      <path d="M10.58 10.58A2 2 0 0012 14a2 2 0 001.42-.58" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M9.88 5.09A9.77 9.77 0 0112 4.8c4.2 0 7.8 2.6 9.2 6.2a10.75 10.75 0 01-2.33 3.47" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M6.1 6.1A10.9 10.9 0 002.8 11c1.4 3.6 5 6.2 9.2 6.2 1.48 0 2.9-.32 4.18-.9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                  <span class="hold-button-label">show hint</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="asset-image">
+              <img src="../Rally app v2/public/image-globe/Image Assets/Air Jordan.jpg" alt="" />
+              <div class="lock">
+                <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24" fill="none" stroke="rgba(255,255,255,0.9)">
+                  <rect x="5.25" y="10.25" width="13.5" height="9.5" rx="2.4" stroke-width="1.7"></rect>
+                  <path d="M8.5 10V7.9A3.5 3.5 0 0112 4.4a3.5 3.5 0 013.5 3.5V10" stroke-width="1.7" stroke-linecap="round"></path>
+                </svg>
+              </div>
+            </div>
+
+            <span class="hint-live" aria-live="polite"></span>
+          </article>
+
+          <article class="asset-row" data-hint="ring relic">
+            <div class="asset-copy">
+              <div class="asset-copy-wrap">
+                <div class="asset-text">
+                  <span class="asset-title asset-title-measure" aria-hidden="true"></span>
+                  <p class="asset-title" aria-hidden="true"></p>
+                  <p class="asset-share">??% of ETF</p>
+                </div>
+
+                <button class="hold-button" type="button" aria-label="Press and hold to show asset hint">
+                  <span class="hold-button-chip">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="white">
+                      <path d="M3 3l18 18" stroke-width="1.8" stroke-linecap="round" />
+                      <path d="M10.58 10.58A2 2 0 0012 14a2 2 0 001.42-.58" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M9.88 5.09A9.77 9.77 0 0112 4.8c4.2 0 7.8 2.6 9.2 6.2a10.75 10.75 0 01-2.33 3.47" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M6.1 6.1A10.9 10.9 0 002.8 11c1.4 3.6 5 6.2 9.2 6.2 1.48 0 2.9-.32 4.18-.9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                  <span class="hold-button-label">show hint</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="asset-image">
+              <img src="../Rally app v2/public/image-globe/Image Assets/Championship ring.jpg" alt="" />
+              <div class="lock">
+                <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24" fill="none" stroke="rgba(255,255,255,0.9)">
+                  <rect x="5.25" y="10.25" width="13.5" height="9.5" rx="2.4" stroke-width="1.7"></rect>
+                  <path d="M8.5 10V7.9A3.5 3.5 0 0112 4.4a3.5 3.5 0 013.5 3.5V10" stroke-width="1.7" stroke-linecap="round"></path>
+                </svg>
+              </div>
+            </div>
+
+            <span class="hint-live" aria-live="polite"></span>
+          </article>
+
+          <article class="asset-row" data-hint="stage sixstring">
+            <div class="asset-copy">
+              <div class="asset-copy-wrap">
+                <div class="asset-text">
+                  <span class="asset-title asset-title-measure" aria-hidden="true"></span>
+                  <p class="asset-title" aria-hidden="true"></p>
+                  <p class="asset-share">??% of ETF</p>
+                </div>
+
+                <button class="hold-button" type="button" aria-label="Press and hold to show asset hint">
+                  <span class="hold-button-chip">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="white">
+                      <path d="M3 3l18 18" stroke-width="1.8" stroke-linecap="round" />
+                      <path d="M10.58 10.58A2 2 0 0012 14a2 2 0 001.42-.58" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M9.88 5.09A9.77 9.77 0 0112 4.8c4.2 0 7.8 2.6 9.2 6.2a10.75 10.75 0 01-2.33 3.47" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M6.1 6.1A10.9 10.9 0 002.8 11c1.4 3.6 5 6.2 9.2 6.2 1.48 0 2.9-.32 4.18-.9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                  <span class="hold-button-label">show hint</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="asset-image">
+              <img src="../Rally app v2/public/image-globe/Image Assets/Guitar.jpg" alt="" />
+              <div class="lock">
+                <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24" fill="none" stroke="rgba(255,255,255,0.9)">
+                  <rect x="5.25" y="10.25" width="13.5" height="9.5" rx="2.4" stroke-width="1.7"></rect>
+                  <path d="M8.5 10V7.9A3.5 3.5 0 0112 4.4a3.5 3.5 0 013.5 3.5V10" stroke-width="1.7" stroke-linecap="round"></path>
+                </svg>
+              </div>
+            </div>
+
+            <span class="hint-live" aria-live="polite"></span>
+          </article>
+
+          <article class="asset-row" data-hint="camera classic">
+            <div class="asset-copy">
+              <div class="asset-copy-wrap">
+                <div class="asset-text">
+                  <span class="asset-title asset-title-measure" aria-hidden="true"></span>
+                  <p class="asset-title" aria-hidden="true"></p>
+                  <p class="asset-share">??% of ETF</p>
+                </div>
+
+                <button class="hold-button" type="button" aria-label="Press and hold to show asset hint">
+                  <span class="hold-button-chip">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="white">
+                      <path d="M3 3l18 18" stroke-width="1.8" stroke-linecap="round" />
+                      <path d="M10.58 10.58A2 2 0 0012 14a2 2 0 001.42-.58" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M9.88 5.09A9.77 9.77 0 0112 4.8c4.2 0 7.8 2.6 9.2 6.2a10.75 10.75 0 01-2.33 3.47" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M6.1 6.1A10.9 10.9 0 002.8 11c1.4 3.6 5 6.2 9.2 6.2 1.48 0 2.9-.32 4.18-.9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                  <span class="hold-button-label">show hint</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="asset-image">
+              <img src="../Rally app v2/public/image-globe/Image Assets/Camera.jpg" alt="" />
+              <div class="lock">
+                <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24" fill="none" stroke="rgba(255,255,255,0.9)">
+                  <rect x="5.25" y="10.25" width="13.5" height="9.5" rx="2.4" stroke-width="1.7"></rect>
+                  <path d="M8.5 10V7.9A3.5 3.5 0 0112 4.4a3.5 3.5 0 013.5 3.5V10" stroke-width="1.7" stroke-linecap="round"></path>
+                </svg>
+              </div>
+            </div>
+
+            <span class="hint-live" aria-live="polite"></span>
+          </article>
+
+          <article class="asset-row" data-hint="press scoop">
+            <div class="asset-copy">
+              <div class="asset-copy-wrap">
+                <div class="asset-text">
+                  <span class="asset-title asset-title-measure" aria-hidden="true"></span>
+                  <p class="asset-title" aria-hidden="true"></p>
+                  <p class="asset-share">??% of ETF</p>
+                </div>
+
+                <button class="hold-button" type="button" aria-label="Press and hold to show asset hint">
+                  <span class="hold-button-chip">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="white">
+                      <path d="M3 3l18 18" stroke-width="1.8" stroke-linecap="round" />
+                      <path d="M10.58 10.58A2 2 0 0012 14a2 2 0 001.42-.58" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M9.88 5.09A9.77 9.77 0 0112 4.8c4.2 0 7.8 2.6 9.2 6.2a10.75 10.75 0 01-2.33 3.47" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M6.1 6.1A10.9 10.9 0 002.8 11c1.4 3.6 5 6.2 9.2 6.2 1.48 0 2.9-.32 4.18-.9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                  <span class="hold-button-label">show hint</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="asset-image">
+              <img src="../Rally app v2/public/image-globe/Image Assets/NYtimes.jpg" alt="" />
+              <div class="lock">
+                <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24" fill="none" stroke="rgba(255,255,255,0.9)">
+                  <rect x="5.25" y="10.25" width="13.5" height="9.5" rx="2.4" stroke-width="1.7"></rect>
+                  <path d="M8.5 10V7.9A3.5 3.5 0 0112 4.4a3.5 3.5 0 013.5 3.5V10" stroke-width="1.7" stroke-linecap="round"></path>
+                </svg>
+              </div>
+            </div>
+
+            <span class="hint-live" aria-live="polite"></span>
+          </article>
+
+          <article class="asset-row" data-hint="cult poster">
+            <div class="asset-copy">
+              <div class="asset-copy-wrap">
+                <div class="asset-text">
+                  <span class="asset-title asset-title-measure" aria-hidden="true"></span>
+                  <p class="asset-title" aria-hidden="true"></p>
+                  <p class="asset-share">??% of ETF</p>
+                </div>
+
+                <button class="hold-button" type="button" aria-label="Press and hold to show asset hint">
+                  <span class="hold-button-chip">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="white">
+                      <path d="M3 3l18 18" stroke-width="1.8" stroke-linecap="round" />
+                      <path d="M10.58 10.58A2 2 0 0012 14a2 2 0 001.42-.58" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M9.88 5.09A9.77 9.77 0 0112 4.8c4.2 0 7.8 2.6 9.2 6.2a10.75 10.75 0 01-2.33 3.47" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M6.1 6.1A10.9 10.9 0 002.8 11c1.4 3.6 5 6.2 9.2 6.2 1.48 0 2.9-.32 4.18-.9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                  <span class="hold-button-label">show hint</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="asset-image">
+              <img src="../Rally app v2/public/image-globe/Image Assets/Batman.jpg" alt="" />
+              <div class="lock">
+                <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24" fill="none" stroke="rgba(255,255,255,0.9)">
+                  <rect x="5.25" y="10.25" width="13.5" height="9.5" rx="2.4" stroke-width="1.7"></rect>
+                  <path d="M8.5 10V7.9A3.5 3.5 0 0112 4.4a3.5 3.5 0 013.5 3.5V10" stroke-width="1.7" stroke-linecap="round"></path>
+                </svg>
+              </div>
+            </div>
+
+            <span class="hint-live" aria-live="polite"></span>
+          </article>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      const glyphs = ["?", "§", "/", "$", "!", ">", "<", "+", "%", "#", "&", "x"];
+      const scrambleDuration = 620;
+      const hideDuration = 420;
+      const scrambleStep = 72;
+      const glyphColor = "#757575";
+      const clearColor = "#000000";
+      const filledLockMarkup = `
+        <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24" fill="rgba(255,255,255,0.94)">
+          <path d="M8.75 10V8.25a3.25 3.25 0 016.5 0V10h.5A2.25 2.25 0 0118 12.25v6.5A2.25 2.25 0 0115.75 21h-7.5A2.25 2.25 0 016 18.75v-6.5A2.25 2.25 0 018.25 10h.5zm1.5 0h3.5V8.4a1.75 1.75 0 00-3.5 0V10z"></path>
+        </svg>`;
+
+      function makeGlyphLabel(text) {
+        return text
+          .split("")
+          .map((char, index) => {
+            if (char === " " || char === "\n") return char;
+            return glyphs[(index * 3 + text.length) % glyphs.length];
+          })
+          .join("");
+      }
+
+      function scrambleFrame(text, progress) {
+        return text
+          .split("")
+          .map((char, index) => {
+            if (char === " " || char === "\n") return char;
+            const revealThreshold = Math.max(0, progress * text.length - index * 0.55);
+            if (revealThreshold > 0.9 || progress >= 1) return char;
+            const poolIndex = (Math.floor(progress * 19) + index * 5 + text.length) % glyphs.length;
+            return glyphs[poolIndex];
+          })
+          .join("");
+      }
+
+      function scrambleBackFrame(text, hiddenText, progress) {
+        return text
+          .split("")
+          .map((char, index) => {
+            if (char === " " || char === "\n") return char;
+            const hideThreshold = Math.max(0, progress * text.length - index * 0.65);
+            if (hideThreshold > 0.9 || progress >= 1) return hiddenText[index];
+            const poolIndex = (Math.floor(progress * 23) + index * 7 + text.length) % glyphs.length;
+            return glyphs[poolIndex];
+          })
+          .join("");
+      }
+
+      function scrambleBetween(source, target, progress) {
+        return target
+          .split("")
+          .map((targetChar, index) => {
+            if (targetChar === " " || targetChar === "\n") return targetChar;
+
+            const sourceChar = source[index] ?? glyphs[(index + target.length) % glyphs.length];
+            if (progress <= 0.08) {
+              return sourceChar === " " || sourceChar === "\n"
+                ? glyphs[(index + target.length) % glyphs.length]
+                : sourceChar;
+            }
+
+            const revealThreshold = Math.max(0, progress * (target.length + 2) - index * 0.58);
+            if (revealThreshold > 1 || progress >= 1) return targetChar;
+            if (progress < 0.22 && sourceChar !== " " && sourceChar !== "\n") return sourceChar;
+
+            const poolIndex = (Math.floor(progress * 29) + index * 7 + target.length) % glyphs.length;
+            return glyphs[poolIndex];
+          })
+          .join("");
+      }
+
+      function mixColor(fromHex, toHex, progress) {
+        const clamped = Math.max(0, Math.min(progress, 1));
+        const parse = (hex, offset) => Number.parseInt(hex.slice(offset, offset + 2), 16);
+        const channels = [1, 3, 5].map((offset) =>
+          Math.round(parse(fromHex, offset) + (parse(toHex, offset) - parse(fromHex, offset)) * clamped)
+        );
+        return `rgb(${channels[0]}, ${channels[1]}, ${channels[2]})`;
+      }
+
+      function wrapLabelToWidth(text, measureNode) {
+        if (!measureNode) return text;
+
+        const words = text.trim().split(/\s+/).filter(Boolean);
+        if (words.length <= 1) return text;
+
+        const computed = window.getComputedStyle(measureNode);
+        const lineHeight = Number.parseFloat(computed.lineHeight) || 15;
+        const threshold = lineHeight + 1;
+        const lines = [];
+        let currentLine = "";
+
+        measureNode.textContent = "";
+
+        for (const word of words) {
+          const candidate = currentLine ? `${currentLine} ${word}` : word;
+          measureNode.textContent = candidate;
+
+          if (currentLine && measureNode.scrollHeight > threshold) {
+            lines.push(currentLine);
+            currentLine = word;
+            measureNode.textContent = currentLine;
+          } else {
+            currentLine = candidate;
+          }
+        }
+
+        if (currentLine) lines.push(currentLine);
+        return lines.join("\n");
+      }
+
+      function setupRow(row) {
+        const title = row.querySelector("p.asset-title");
+        const measure = row.querySelector(".asset-title-measure");
+        const liveRegion = row.querySelector(".hint-live");
+        const button = row.querySelector(".hold-button");
+        const lock = row.querySelector(".lock");
+        const rawText = String(row.dataset.hint || "").toUpperCase();
+        let clearText = rawText;
+        let hiddenText = makeGlyphLabel(clearText);
+        let displayText = hiddenText;
+        let timer = null;
+        let phase = "hidden";
+
+        function render(text) {
+          displayText = text;
+          title.textContent = text;
+          liveRegion.textContent = text === hiddenText ? "" : text;
+        }
+
+        function setTitleColor(color) {
+          title.style.color = color;
+        }
+
+        function updateWrappedText() {
+          clearText = wrapLabelToWidth(rawText, measure);
+          hiddenText = makeGlyphLabel(clearText);
+
+          if (phase === "hidden") {
+            render(hiddenText);
+            setTitleColor(glyphColor);
+          } else if (phase === "visible") {
+            render(clearText);
+            setTitleColor(clearColor);
+          }
+        }
+
+        function clearTimer() {
+          if (timer) {
+            window.clearTimeout(timer);
+            timer = null;
+          }
+        }
+
+        function runAnimation(nextPhase) {
+          clearTimer();
+          phase = nextPhase;
+          button.classList.toggle("is-pressed", nextPhase === "revealing");
+          const startedAt = performance.now();
+          const sourceText = displayText;
+          const targetText = nextPhase === "revealing" ? clearText : hiddenText;
+
+          const tick = () => {
+            if (phase !== nextPhase) return;
+            const elapsed = performance.now() - startedAt;
+            const duration = nextPhase === "revealing" ? scrambleDuration : hideDuration;
+            const rawProgress = Math.min(elapsed / duration, 1);
+            render(scrambleBetween(sourceText, targetText, rawProgress));
+            setTitleColor(
+              nextPhase === "revealing"
+                ? mixColor(glyphColor, clearColor, rawProgress)
+                : mixColor(clearColor, glyphColor, rawProgress)
+            );
+
+            if (rawProgress < 1) {
+              timer = window.setTimeout(tick, scrambleStep);
+            } else if (nextPhase === "revealing") {
+              render(targetText);
+              setTitleColor(clearColor);
+              phase = "visible";
+              timer = null;
+            } else {
+              render(targetText);
+              setTitleColor(glyphColor);
+              phase = "hidden";
+              timer = null;
+            }
+          };
+
+          tick();
+        }
+
+        function startScramble() {
+          if (phase === "revealing" || phase === "visible") return;
+          runAnimation("revealing");
+        }
+
+        function stopScramble() {
+          if (phase === "hidden" || phase === "hiding") return;
+          runAnimation("hiding");
+        }
+
+        button.addEventListener("contextmenu", (event) => event.preventDefault());
+        button.addEventListener("pointerdown", (event) => {
+          if (event.pointerType === "mouse" && event.button !== 0) return;
+          button.setPointerCapture?.(event.pointerId);
+          startScramble();
+        });
+        button.addEventListener("pointerup", () => stopScramble());
+        button.addEventListener("pointercancel", () => stopScramble());
+        button.addEventListener("pointerleave", () => stopScramble());
+        button.addEventListener("lostpointercapture", () => stopScramble());
+
+        if (lock) {
+          lock.innerHTML = filledLockMarkup;
+        }
+
+        updateWrappedText();
+        setTitleColor(glyphColor);
+
+        if ("ResizeObserver" in window) {
+          const observer = new ResizeObserver(() => updateWrappedText());
+          observer.observe(row.querySelector(".asset-text"));
+        }
+      }
+
+      document.querySelectorAll(".asset-row").forEach(setupRow);
+    </script>
+  </body>
+</html>
